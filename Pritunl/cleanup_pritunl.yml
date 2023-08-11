@@ -1,0 +1,54 @@
+---
+- hosts: Pritunlserver
+  remote_user: ec2-user
+  become: yes #Ansible “become true” is used to activate privilege escalation
+  tasks:
+
+    - name: Add Mongo-DB Repository
+      yum_repository:
+        name: mongodb-org-6.0
+        file: mongodb-org-6.0
+        state: absent    
+
+    - name: Add Mongo-DB Repository
+      yum_repository:
+        name: pritunl
+        file: pritunl
+        state: absent   
+
+    - name: Remove MongoDB log and data directories
+      file:
+        path: /usr/bin/mongod
+        state: absent
+
+    # - name: Remove MongoDB data directory
+    #   file:
+    #     path: /var/lib/mongodb
+    #     state: absent
+
+    - name: Remove Oracle EPEL Release package
+      yum:
+        name: oracle-epel-release-el8
+        state: absent
+
+    # WireGuard server support
+    - name: Remove wireguard-tools package
+      yum:
+        name: wireguard-tools
+        state: absent
+
+    - name: Remove pritunl-openvpn package
+      yum:
+        name: pritunl-openvpn
+        state: absent
+
+    # - name: Enable Pritunl service
+    #   ansible.builtin.service:
+    #     name: pritunl
+    #     state: stopped
+   
+
+    # - name: Unistall mongodb-org
+    #   yum:
+    #     name: mongodb-org
+    #     state: absent

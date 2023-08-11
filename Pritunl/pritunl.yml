@@ -1,0 +1,111 @@
+---
+- hosts: Pritunlserver
+  remote_user: ec2-user
+  become: yes #Ansible “become true” is used to activate privilege escalation
+  tasks:
+    - name: Add Mongo-DB Repository
+      yum_repository:
+        name: mongodb-org-6.0
+        description: MongoDB Repository
+        file: /etc/yum.repos.d/mongodb-org-6.0
+        baseurl: https://repo.mongodb.org/yum/redhat/8/mongodb-org/6.0/x86_64/
+        gpgcheck: yes
+        enabled: yes
+        gpgkey: https://www.mongodb.org/static/pgp/server-6.0.asc
+
+    - name: Add Pritunl Repository
+      yum_repository:
+        name: pritunl
+        description: Pritunl Repository
+        file: /etc/yum.repos.d/pritunl
+        baseurl: https://repo.pritunl.com/stable/yum/oraclelinux/8/
+        gpgcheck: yes
+        enabled: yes
+
+    - name: Install Oracle EPEL Release package
+      yum:
+        name: oracle-epel-release-el8
+        state: present
+
+    - name: Enable Oracle EPEL Repository
+      command: yum-config-manager --enable ol8_developer_EPEL
+
+    # - name: Update all packages
+    #   yum:
+    #     name: "*"
+    #     state: latest
+
+    # WireGuard server support
+    - name: Install wireguard-tools package
+      yum:
+        name: wireguard-tools
+        state: present
+
+    - name: Remove iptables-services package
+      yum:
+        name: iptables-services
+        state: absent
+
+    - name: Stop firewalld service
+      systemd:
+        name: firewalld
+        state: stopped
+
+    - name: Disable firewalld service
+      systemd:
+        name: firewalld
+        enabled: no
+
+    # Import signing key from keyserver
+    - name: Import GPG Key
+      command: gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 7568D9BB55FF9E5287D586017AE645C0CF8E292A
+
+    - name: Export GPG Key
+      command: gpg --armor --export 7568D9BB55FF9E5287D586017AE645C0CF8E292A > key.tmp
+
+    - name: RPM Import GPG Key
+      command: gpg --armor --export 7568D9BB55FF9E5287D586017AE645C0CF8E292A > key.tmp; sudo rpm --import key.tmp; rm -f key.tmp
+
+    - name: RPM Import GPG Key from URL
+      command: rpm --import https://raw.githubusercontent.com/pritunl/pgp/master/pritunl_repo_pub.asc
+
+    - name: Install pritunl-openvpn package
+      yum:
+        name: pritunl-openvpn
+        state: present
+        allowerasing: yes
+
+    - name: Install pritunl and mongodb-org
+      yum:
+        name:
+          - pritunl
+          - mongodb-org
+        state: present
+
+    - name: Enable MongoDB service
+      systemd:
+        name: mongod
+        enabled: yes
+        state: started
+
+    - name: Enable Pritunl service
+      systemd:
+        name: pritunl
+        enabled: yes
+        state: started
+
+    - name: Run Pritunl Setup-Key
+      command: pritunl setup-key
+      register: setup_key
+
+    - name: Print Pritunl Setup-Key
+      debug:
+        msg: "Pritunl Setup-Key: {{ setup_key.stdout }}"
+
+    - name: Run Pritunl Default Password
+      command: pritunl default-password
+      register: default_password
+
+    - name: Print Pritunl Default Password
+      debug:
+        msg: "Pritunl Default Password : {{ default_password.stdout }}"
