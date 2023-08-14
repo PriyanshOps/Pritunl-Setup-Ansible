@@ -102,10 +102,10 @@
       debug:
         msg: "Pritunl Setup-Key: {{ setup_key.stdout }}"
 
-    - name: Run Pritunl Default Password
-      command: pritunl default-password
-      register: default_password
+    # - name: Run Pritunl Default Password
+    #   command: pritunl default-password
+    #   register: default_password
 
-    - name: Print Pritunl Default Password
-      debug:
-        msg: "Pritunl Default Password : {{ default_password.stdout }}"
+    # - name: Print Pritunl Default Password
+    #   debug:
+    #     msg: "Pritunl Default Password : {{ default_password.stdout }}"
